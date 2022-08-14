@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   name: po1
   labels:
-    color: red
+    color: blue
   namespace: brk
 spec:
   containers:
@@ -13,6 +13,6 @@ spec:
       ports: 
         -
           containerPort: 80
-          hostPort: 8080
+          hostPort: 5000
 
     
