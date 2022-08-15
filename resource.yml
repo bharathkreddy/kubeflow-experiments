@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resource-example
+spec:
+  containers:
+    - 
+      name: webapp
+      image: httpd:alpine
+      resources:
+        limits:
+          cpu: "1" #has to be text and gives max cpu claim that the pod can make
+        requests:	
+          cpu: "0.25" #text and is min required resources for this pod.
