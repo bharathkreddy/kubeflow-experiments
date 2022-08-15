@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: replicaset-example
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      color: blue
+  template:
+    metadata:
+      labels:
+        color: blue #has to match above matchlabels
+    spec:
+      containers:
+        -
+          name: webserver1
+          image: httpd:alpine
+          ports: 
+            -
+              containerPort: 80
+              hostPort: 5000
