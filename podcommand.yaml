@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: podcommand
+  namespace: brk
+  labels:
+    env: brk
+spec:
+  containers:
+  - name: mycontainer
+    image: docker.io/ubuntu
+    command: ["/bin/bash"]  # this is like entry point , not run in shell. 
+    args: ["-c","while true; do echo hello;sleep 5; done"]

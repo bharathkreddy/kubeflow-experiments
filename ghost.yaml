@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kubernetes.io/change-cause: kubectl run mydep --image=ghost:0.9 --record=true
+      --dry-run=true --output=yaml
+  creationTimestamp: null
+  labels:
+    run: mydep
+  name: mydep
+  namespace: brk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: mydep
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: mydep
+    spec:
+      containers:
+      - image: ghost:0.9
+        name: mydep
+        resources: {}
+status: {}
+
