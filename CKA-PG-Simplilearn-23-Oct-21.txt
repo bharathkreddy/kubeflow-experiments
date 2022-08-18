@@ -1,0 +1,2052 @@
+﻿By Pavan Wankhade
+-------------------------------------------
+
+
+Installation Reference : https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/ 
+
+
+One each node and master
+
+
+sudo kubeadm reset  (do it one time only) 
+
+
+
+
+ sudo kubeadm reset
+  209  clear
+  210  sudo kubeadm init
+  211  mkdir -p $HOME/.kube
+  212  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  213  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  214  kubectl get nodes
+
+
+--
+On each worker node copy the join command with sudo 
+
+
+Note : To get the join command again on mater  → 
+  215  sudo kubeadm token create --print-join-command
+
+
+  216  kubectl get pod
+  217  kubectl get pod -n kube-system
+
+
+https://www.weave.works/docs/net/latest/kubernetes/kube-addon/
+
+
+
+
+  218  kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+  219  kubectl get pod -n kube-system
+  220  kubectl get pod -n kube-system -w      #### its watch   press Ctrl + C to stop
+
+
+  221  kubectl get pod -n kube-system 
+kubectl get pod -o wide
+
+
+========================================
+User Request ==> API Server   ==>  etcd  ==> Scheduler   ==>  Controller  ==>  
+===>  (Respective Nodes ) Kubelet  ==>  Container runtime (Docker)  ==> Container
+
+
+----------------------------------------------------------------
+
+
+Application User   ===>   Kube-Proxy  ===>  Pod 
+-------------------------------------------------------------------------
+### Pod Creation
+--------------------------------------
+====================
+248  vi pod.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: apache1
+  labels:
+    color: red
+spec:
+  containers:
+  - name: mycontainer
+    image: docker.io/httpd
+    ports:
+    - containerPort: 80
+
+
+
+
+   250  kubectl create -f pod.yml
+  251  kubectl get pod
+  252  kubectl get pod -o wide
+  253  curl http://10.32.0.2
+--------------------------------------------
+==============================
+Task
+1. Deploy a new pod with image called docker.io/openshift/hello-openshift which is running on 8080 port number
+==================================================================
+### Labels and Selectors   +   Service 
+
+
+
+
+$ cat mysvc.yml 
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysvc1
+spec:
+  selector:
+    color: red
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+--------------------------------------
+ 80  vi mysvc.yml
+   81  kubectl create -f mysvc.yml 
+   82  kubectl get svc
+   83  kubectl get svc -o wide
+   84  kubectl describe svc mysvc1
+   85  kubectl get pod
+   86  kubectl get pod -o wide
+======================================================
+#### POD + Service   MYMARIO
+ 125  kubectl delete svc --all
+  126  kubectl delete pod --all
+  127  kubectl get pod
+  128  vi game.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mario2
+  labels:
+    test: mario
+spec:
+  containers:
+  - name: mycontainer
+    image: docker.io/pengbai/docker-supermario
+    ports:
+    - containerPort: 8080
+
+
+
+
+  129  kubectl create -f game.yml 
+  132  kubectl get pod
+  133  kubectl get pod -w
+  134  vi game.yml 
+  135  kubectl create -f game.yml 
+  136  kubectl get pod 
+  137  kubectl get pod -o wide
+
+
+  138  vi marioservice.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: mymario
+spec:
+  selector:
+     test: mario
+  ports:
+    - protocol: TCP
+      port: 8181
+      targetPort: 8080
+
+
+
+
+  139  kubectl get svc
+  140  kubectl create -f marioservice.yml 
+  141  kubectl get svc
+  142  kubectl get svc -o wide
+  143  kubectl describe svc mymario
+=========================================
+### Example 2
+
+
+$ cat pacman.yml 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pacman2
+  labels:
+     class: pg
+spec:
+  containers:
+  - name: mycontainer
+    image: docker.io/uzyexe/pacman
+    ports:
+    - containerPort: 80
+=====================
+~$ cat pacmanservice.yml 
+apiVersion: v1
+kind: Service
+metadata:
+  name: myman
+spec:
+  selector:
+    class: pg
+  ports:
+    - protocol: TCP
+      port: 8181
+      targetPort: 80
+================================================
+### Service Type Change to NodePort
+ 180  kubectl delete svc --all
+  181  kubectl delete pod --all
+  182  kubectl get pod
+  183  kubectl get svc
+  184  ls
+  185  kubectl create -f game.yml 
+  186  vi game.yml 
+  187  kubectl create -f game.yml 
+  188  kubectl get pod --show-labels
+  190  kubectl create -f marioservice.yml 
+  191  kubectl get svc
+  192  kubectl edit svc mymario
+Change type ClusterIP to NodePort 
+
+
+
+
+  193  kubectl get svc
+  194  kubectl get node -o wide
+(Access via any nodeIP:PORTNO)
+Access application by Any Nodes’s IP : Port No given by Service
+====================================================
+### Deployment Creation
+ 197  kubectl create deployment mydep1 --image=docker.io/httpd
+  198  kubectl get deployment
+  199  kubectl get pod
+  200  kubectl get pod -o wide
+  201  curl http://10.40.0.3
+  203  kubectl delete pod mydep1-6b7cfdd955-mt8z5
+  204  kubectl get pod -o wide
+  205  kubectl scale deployment mydep1 --replicas=5
+  206  kubectl get pod -o wide
+  208  kubectl delete pod mydep1-6b7cfdd955-x8266
+  209  kubectl get pod -o wide
+  210  kubectl scale deployment mydep1 --replicas=10
+  211  kubectl get pod -o wide
+  212  kubectl scale deployment mydep1 --replicas=3
+  213  kubectl get pod -o wide -w
+  214  kubectl get pod -o wide 
+===========================================
+Task : Create deployment for Mario/Pacman
+===============================================
+
+
+## Continue Deployment 
+## Service Creation from Deployment 
+ 219  kubectl get pod -o wide 
+  220  kubectl get deployment
+  221  kubectl describe deployment mydep1
+  222  kubectl get replicaset
+  223  kubectl get svc
+  224  kubectl expose deployment mydep1 --port=80
+  225  kubectl get svc
+  226  kubectl get svc --show-labels
+
+
+## To create service from deployment : Just expose the deployment 
+  227  kubectl describe svc mydep1
+  228  history 
+  229  kubectl get svc --show-labels
+  230  curl http://10.96.106.22:80
+  231  kubectl get pod
+  232  kubectl exec -it mydep1-6b7cfdd955-7jsrv bash
+echo “This is Pod1” > htdocs/index.html 
+exit
+ 234  kubectl exec -it mydep1-6b7cfdd955-9bwzq bash
+echo “This is Pod2” > htdocs/index.html 
+exit
+  235  kubectl exec -it mydep1-6b7cfdd955-p99kf bash
+echo “This is Pod3” > htdocs/index.html 
+exit
+  236  curl http://10.96.106.22:80
+
+
+  236  curl http://10.96.106.22:80
+
+
+  236  curl http://10.96.106.22:80
+=========================================
+TASK
+## Create service and try to access for mario.pacman deployment 
+======================================================
+### Deleting Deployment
+239  kubectl get pod
+  240  kubectl get rs
+  241  kubectl get deployment 
+  242  kubectl delete deployment mydep1
+  243  kubectl get deployment 
+  244  kubectl get rs
+  245  kubectl get pod
+  246  kubectl get svc
+  247  kubectl delete svc mydep1
+=======================================
+===========
+
+
+Extra
+---------
+
+
+Kind 
+
+
+POd   : Create pod
+
+
+ service : create only service
+
+
+replicaset  :  pods + replicaset
+
+
+deployment :  pods +  replicaset + deployment
+
+
+Expose Deployment to get Service
+=========================
+Task
+## Delete all Deployments and services you are running in Default namespace
+===========================================================
+### ReplicaSet
+  250  kubectl get rs
+  251  kubectl create -f rs.yml 
+vi rs.yml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: frontend
+  labels:
+    app: guestbook
+    tier: frontend
+spec:
+  # modify replicas according to your case
+  replicas: 3
+  selector:
+    matchLabels:
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        tier: frontend
+    spec:
+      containers:
+      - name: php-redis
+        image: gcr.io/google_samples/gb-frontend:v3
+
+
+  252  kubectl get rs
+  253  kubectl get pod
+  254  kubectl get pod 
+  255  kubectl get rs
+  256  kubectl delete pod frontend-7gp8t
+  257  kubectl get rs
+  258  kubectl get pod 
+  259  kubectl edit rs frontend
+### Change replica count
+  260  kubectl get rs
+  261  kubectl get pod 
+  262  history 
+  263  kubectl delete rs frontend
+  264  kubectl get pod 
+===============================================
+DAY4
+--------
+
+
+Labels and Selectors :
+Equity Based Selectors , Set Based Selectors
+ 274  vi pod.yml 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod6
+  labels:
+    run : test4
+spec:
+  containers:
+  - name: mycontainer
+    image: docker.io/httpd
+    ports:
+    - containerPort: 80
+
+
+  275  kubectl create -f pod
+  276  kubectl create -f pod.yml 
+  277  vi pod.yml 
+  278  kubectl create -f pod
+  279  kubectl create -f pod.yml 
+  280  vi pod.yml 
+  281  kubectl create -f pod.yml 
+  282  vi pod.yml 
+  283  kubectl create -f pod.yml 
+  284  kubectl get pod
+  285  kubectl get pod --show-labels
+  286  kubectl get pod -l run=test1
+  287  kubectl get pod -l run=test2
+  288  kubectl get pod -l 'run in (test2)'
+  289  kubectl get pod -l 'run notin (test2)'
+  290  vi pod.yml 
+  291  kubectl create -f pod.yml 
+  292  vi pod.yml 
+  293  kubectl create -f pod.yml 
+  294  kubectl get pod --show-labels
+  295  kubectl get pod -l run=test1
+  296  kubectl get pod -l 'run notin (test2)'
+  297  kubectl get pod -l 'run in (test2)'
+  298  kubectl get pod -l 'run in (test2,test1)'
+  299  kubectl get pod -l 'run notin (test2,test1)'
+====================================================
+
+
+Practice Task:
+
+
+Create 2 Mario application pods with following labels
+application=business
+client=local
+
+
+Create 2 Pacman allocation pods with following labels
+application=commercial
+client=remote
+
+
+Try to list out those using equity based and set based selectors
+===============
+### POD/Container Resource Limit
+ CPU Units:     1 CPU in K8S  is equivalent to 
+                          1 Azure vCore
+                         1 GCP Core
+                          1 AWS vCPU
+                         1 Hyperthread on barematel processor (intel)
+
+
+ex. 0.5 CPU , 1 ,2 
+              
+ 100m CPU ,   0.1 CPU    , 100miliCPU
+=====================================================
+
+
+302  kubectl delete pod --all
+  303  vi limit.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cpu-demo
+spec:
+  containers:
+  - name: cpu-demo-ctr
+    image: vish/stress
+    resources:
+      limits:
+        cpu: "1"
+      requests:
+        cpu: "0.5"
+
+
+-----------------------------------
+  304  kubectl create -f limit.yml 
+  305  kubectl get pod
+  306  kubectl describe pod cpu-demo
+  307  kubectl get pod -o wide
+  308  kubectl describe node client1   ##Node name can be different in your case
+  309  history 
+
+
+Ref:  
+https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#:~:text=Each%20Container%20has%20a%20limit,cpu%20and%20256MiB%20of%20memory.
+
+
+https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/
+=======================================================================
+
+
+========================
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+
+
+========================================
+### DaemonSet
+
+
+ 311  kubectl get ds
+  312  vi ds.yml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: test
+spec:
+  selector:
+    matchLabels:
+      name: frontend-webserver
+  template:
+    metadata:
+      labels:
+        name: frontend-webserver
+    spec:
+      containers:
+        - name: webserver
+          image: httpd
+          ports:
+          - containerPort: 80
+
+
+--------------------------------------------------
+
+
+  313  kubectl create -f ds.yml 
+  314  kubectl get pod
+  315  kubectl get pod -o wide
+  316  kubectl delete pod test-z5cgc
+  317  kubectl get pod -o wide
+  318  kubectl get ds
+  319  kubectl describe ds test
+
+
+  321  kubectl get ds
+  322  kubectl get pod -o wide
+  323  kubectl get  node -o wide
+  324  kubectl edit node server
+#### Delete following lines so master can also schedule pods
+
+
+taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+
+
+
+
+####   You can see one pod starting on master node
+
+
+
+
+
+
+  325  kubectl get pod -o wide
+  326  history 
+==================================================================
+### Mysql Deployment and ENV
+
+
+##  kubectl create deployment mydep1 --image=docker.io/mysql:5.6 --dry-run -o yaml > database1.yml
+
+
+vi database1.yml 
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: database1
+  name: database1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: database1
+    spec:
+      containers:
+      - image: docker.io/mysql:5.6
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: centos
+        - name: MYSQL_DATABASE
+          value: simplilearn          
+        resources: {}
+status: {}
+
+
+
+
+  510  kubectl create -f database1.yml 
+  511  kubectl get deployment 
+  512  kubectl get pod
+  514  kubectl logs database1-759884f9b4-pcrpq
+  515  clear
+  516  kubectl get pod
+  517  kubectl exec -it database1-759884f9b4-pcrpq bash
+
+
+        $  mysql -uroot -pcentos
+
+
+        $  show databases;
+        $  exit
+        $ exit
++++++++++++++++++++++++++++++
+## Wordpress 
+
+
+  347  kubectl get deployment 
+  348  kubectl expose deployment mydep1 --port=3306
+  349  kubectl get svc 
+  350  vi wordpress.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: wp
+  name: wp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wp
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: wp
+    spec:
+      containers:
+      - image: docker.io/wordpress
+        name: wordpress
+        env: 
+        - name: WORDPRESS_DB_HOST
+          value: mydep1       #### Name of your mysql deployment service
+        - name: WORDPRESS_DB_PASSWORD
+          value: centos
+        - name: WORDPRESS_DB_USER
+          value: root
+        - name: WORDPRESS_DB_NAME
+          value: simplilearn
+        resources: {}
+status: {}
+
+
+
+
+
+
+  351  kubectl create -f wordpress.yml 
+  352  kubectl get deployment
+  353  kubectl get pod
+  354  kubectl logs wp-7b79b84fd4-vdgkm
+  355  kubectl get deployment
+  356  kubectl expose deployment wp --port=80 --type=NodePort
+  357  kubectl get svc
+  358  kubectl get node -o wide
+
+
+==============================================
+### Namespaces ## Running resources in isolation
+
+
+362  kubectl get nodes
+  363  kubectl get pod
+  364  kubectl get pod -n kube-system
+  365  kubectl get namespaces
+  366  kubectl get pod -n kube-public
+  367  kubectl get pod -n default
+  368  kubectl create namespace client1
+  369  kubectl get namespaces
+
+
+  371  kubectl create deployment linuxserver --image=docker.io/centos -n client1
+  372  kubectl get deployment 
+  373  kubectl get deployment -n client1
+  374  kubectl get pod -n client1 
+  379  kubectl delete deployment linuxserver -n client1
+  380  kubectl delete namespace client1
+=====================================================================
+### Node Labels and Node Selectors
+
+
+382  kubectl get nodes
+  383  kubectl get nodes --show-labels
+  384  kubectl label node client1 environment=production
+  385  kubectl label node workstation environment=test
+  386  kubectl get nodes --show-labels
+  387  vi nodeselector.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-workstation
+  labels:
+    env: test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    imagePullPolicy: IfNotPresent
+  nodeSelector:
+    environment: test
+
+
+---------------------------
+  388  kubectl delete pod --all
+  389  kubectl delete deployment --all
+  390  kubectl create -f nodeselector.yml 
+  391  kubectl get pod -o wide
+  392  kubectl get nodes --show-labels
+  393  vi nodeselector.yml
+  394  kubectl create -f nodeselector.yml 
+  395  kubectl get pod -o wide
+  396  vi nodeselector.yml
+  397  kubectl create -f nodeselector.yml 
+  398  kubectl get pod -o wide
+  399  kubectl delete pod --all
+
+
+### Can give same labels to multiple nodes
+
+
+  400  kubectl label node client1 color=blue
+  401  kubectl label node workstation color=blue
+  402  kubectl get nodes --show-labels
+
+
+## To Remove labels
+  403  kubectl label node workstation environment-
+  404  kubectl label node client1 environment-
+  405  kubectl get nodes --show-labels
+ ====================================
+Task: 
+Assign labels to nodes as follows: 
+Node1 :   class=devops
+Node2:    class=pg
+
+
+Create docker.io/httpd image pod on node where node label mathes to “class=pg”
+======================================================
+
+
+
+
+#### Monitoring Using Prometheus and Grafana
+ 414  kubectl create namespace monitoring
+  415  git clone https://github.com/bibinwilson/kubernetes-prometheus
+  416  ls
+  417  cd kubernetes-prometheus/
+  418  ls
+  419  kubectl create -f .
+  420  kubectl get pod -n monitoring
+  421  kubectl get svc -n monitoring
+  422  kubectl get nodes -o wide
+## Access Prometheus with browser with Node IP and port no given by service
+### Time for Grafana
+
+
+
+
+425  cd ..
+  426  vi grafana.yml
+
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+data:
+  prometheus.yaml: |-
+    {
+        "apiVersion": 1,
+        "datasources": [
+            {
+               "access":"proxy",
+                "editable": true,
+                "name": "prometheus",
+                "orgId": 1,
+                "type": "prometheus",
+                "url": "http://prometheus-service.monitoring.svc:8080",
+                "version": 1
+            }
+        ]
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      name: grafana
+      labels:
+        app: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - name: grafana
+          containerPort: 3000
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+          requests: 
+            memory: "1Gi"
+            cpu: "500m"
+        volumeMounts:
+          - mountPath: /var/lib/grafana
+            name: grafana-storage
+          - mountPath: /etc/grafana/provisioning/datasources
+            name: grafana-datasources
+            readOnly: false
+      volumes:
+        - name: grafana-storage
+          emptyDir: {}
+        - name: grafana-datasources
+          configMap:
+              defaultMode: 420
+              name: grafana-datasources
+---   
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring
+  annotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port:   '3000'
+spec:
+  selector: 
+    app: grafana
+  type: NodePort  
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 32000
+
+
+--------------------------------------------------------------------------------------------
+
+
+
+
+  427  kubectl create -f grafana.yml 
+  428  kubectl get pod -n monotoring
+  429  kubectl get pod -n monitoring
+  430  kubectl get deployment -n monitoring
+  431  kubectl get svc -n monitoring
+----------
+## Access grafana using NodeIP:32000
+
+
+Default username and Password is : admin
+username/password: admin/admin
+
+
+Create a example using Grafana template import from grafana.com
+Reference for Dashboard -> https://grafana.com/grafana/dashboards?search=kubernetes&orderBy=downloads&direction=desc
+--
+Some Examples 
+IDs → 10000 , 315
+
+
+=======================================================================================
+
+
+Metrics Server
+
+
+========
+514  kubectl get pod -n kube-system
+  515  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml 
+  516  kubectl get pod -n kube-system
+  517  wget -c https://gist.githubusercontent.com/initcron/1a2bd25353e1faa22a0ad41ad1c01b62/raw/008e23f9fbf4d7e2cf79df1dd008de2f1db62a10/k8s-metrics-server.patch.yaml
+
+
+  518  ls
+  519  kubectl patch deploy metrics-server -p "$(cat k8s-metrics-server.patch.yaml)" -n kube-system
+  520  kubectl get pod -n kube-system
+  521  kubectl top nodes
+  522  kubectl top pod
+  523  kubectl top pod -n kube-system
+-----------
+## HPA -    Horizontal Pod Autoscaler   - (Metrics Server needed)
+
+
+ 527  vi hpaexample.yml
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  name: php-apache
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    run: php-apache
+status:
+  loadBalancer: {}
+---
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    run: php-apache
+  name: php-apache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: php-apache
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: php-apache
+    spec:
+      containers:
+      - image: k8s.gcr.io/hpa-example
+        name: php-apache
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 200m
+status: {}
+------------------------------
+
+
+
+
+  528  kubectl create -f hpaexample.yml 
+  529  kubectl get deployment
+  530  kubectl get svc
+  531  kubectl get hpa
+
+
+  532  vi hpa.yml
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  creationTimestamp: null
+  name: php-apache
+spec:
+  maxReplicas: 10
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: php-apache
+  targetCPUUtilizationPercentage: 50
+status:
+  currentReplicas: 0
+  desiredReplicas: 0
+
+
+----------------------------------
+
+
+  533  kubectl create -f hpa.yml 
+  534  kubectl get hpa
+  535  kubectl get pod
+  536  kubectl get pod -w
+  537  kubectl get pod 
+##
+## Lets test it by giving load to application ## Open new terminal of master and run following
+$ kubectl run -i --tty load-generator --image=busybox /bin/sh
+$ while true; do wget -q -O- http://php-apache.default.svc.cluster.local; done
+### Observe with    $  kubectl get pod -w
+
+
+
+
+#########################
+## Extras
+
+
+Delete resources
+
+
+ 515  kubectl get deployment
+  516  kubectl get svc
+  517  kubectl get hpa
+  518  kubectl delete -f hpa.yml 
+  519  kubectl delete -f hpaexample.yml 
+
+
+kubectl delete -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml 
+
+
+===============================
+### Logs
+550  kubectl create -f hpaexample.yml 
+  551  kubectl create -f game.yml 
+  552  kubectl get pod
+  553  kubectl logs php-apache-68bf459dff-xzl4q
+  554  kubectl scale deployment php-apache --replicas=3
+  555  kubectl get pod
+  556  kubectl get pod --show-labels
+  557  kubectl logs -l run=php-apache
+  558  kubectl get pod
+  559  kubectl logs php-apache-68bf459dff-b9nn9
+  560  kubectl logs -l run=php-apache
+  561  kubectl logs -l run=php-apache --since=1h
+  562  kubectl logs -l run=php-apache --since=1m
+  563  kubectl logs -l run=php-apache --since=1M
+  564  kubectl logs -l run=php-apache --since=0.5h
+  565  kubectl logs -l run=php-apache --tail=10
+  566  kubectl logs -l run=php-apache --tail=2
+  567  kubectl logs -l run=php-apache --tail=2 -f
+  568  kubectl logs --help
+  569  kubectl get pod -n kube-system
+  570  kubectl logs -c weave weave-net-ghz4v -n kube-system
+  571  kubectl logs -c weave weave-net-ghz4v -n kube-system --tail=10
+  572  kubectl logs -c weave weave-net-ghz4v -n kube-system --since=10m
+===============================
+
+
+### Rollout   and Rollback
+## Command is rollout
+  586  vi ghost.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kubernetes.io/change-cause: kubectl run mydep --image=ghost:0.9 --record=true
+      --dry-run=true --output=yaml
+  creationTimestamp: null
+  labels:
+    run: mydep
+  name: mydep
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: mydep
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: mydep
+    spec:
+      containers:
+      - image: ghost:0.9
+        name: mydep
+        resources: {}
+status: {}
+
+
+
+
+
+
+
+
+  587  kubectl create -f ghost.yml 
+  588  kubectl get deployment
+  589  kubectl get pods
+  590  kubectl describe deployment mydep
+  591  kubectl rollout --help
+  592  kubectl rollout history deployment mydep
+  593  kubectl set image deployment mydep mydep=ghost:0.11 --record
+  594  kubectl rollout history deployment mydep
+  595  kubectl describe deployment mydep
+  596  kubectl set image deployment mydep mydep=ghost:0.9 --record
+  597  kubectl rollout history deployment mydep
+  598  kubectl describe deployment mydep
+
+
+--------------
+603  kubectl rollout history deployment mydep
+
+
+### rollout undo     is rollback
+  605  kubectl rollout undo deployment mydep --to-revision=3
+  606  kubectl rollout history deployment mydep
+  607  kubectl rollout pause deployment mydep
+  608  kubectl get pod
+  609  kubectl set image deployment mydep mydep=ghost:0.14
+  610  kubectl get pod
+  611  kubectl rollout history deployment mydep
+  612  kubectl rollout resume deployment mydep
+  613  kubectl rollout history deployment mydep
+  614  kubectl get pod
+=======================================
+##### Running Command and Arguments in pod
+
+
+$ cat podCommand.yml 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mypod2
+  labels:
+    mycka: simplilearn
+spec:
+  containers:
+  - name: mycontainer
+    image: docker.io/ubuntu
+    command: ["hostname"]
+
+
+===========================
+ 631  kubectl create -f podCommand.yml 
+  632  kubectl get pod -w
+  634  kubectl logs mypod1
+
+
+
+
+===================================
+
+
+$ cat podArgument.yml 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: arg1
+  labels:
+    mycka: simplilearn
+spec:
+  containers:
+  - name: mycontainer
+    image: docker.io/ubuntu
+    command: ["/bin/sh"]
+    args: ["-c","while true; do echo hello; sleep 10;done"]
+=================================================
+639  kubectl create -f  podArgument.yml 
+  640  kubectl get pod 
+  641  kubectl logs arg1
+  642  kubectl logs arg1 -f
+  643* kubectl delete pod 
+  644  cat podCommand.yml 
+  645  cat podArgument.yml 
+  646  kubectl delete -f podArgument.yml 
+  647  kubectl delete pod --all
+====================================================================
+====================================================================
+### ConfigMap
+
+
+ 649  kubectl get configmap
+  650  kubectl create configmap example-configmap --from-literal=developer=pavan --from-literal=course=pgCKA
+  651  kubectl get configmap
+  652  kubectl describe configmap example-configmap
+
+
+  653  vi configpod.yml
+kind: Pod 
+apiVersion: v1 
+metadata:
+  name: pod-env-var 
+spec:
+  containers:
+    - name: env-var-configmap
+      image: nginx:1.7.9
+      envFrom:
+         - configMapRef:
+                 name: example-configmap
+
+
+
+
+  654  kubectl create -f configpod.yml 
+  655  kubectl get pod
+  656  kubectl exec -it pod-env-var bash
+           env
+           exit
+====================================================
+---
+Task
+1. Apply Configmap for deployment 
+
+
+--
+### Using selected data from Configmap
+
+
+$ cat configpod1.yml 
+kind: Pod
+apiVersion: v1
+metadata:
+  name: pod-env2
+spec:
+  containers:
+    - name: env-var-configmap
+      image: nginx:1.7.9
+      env:
+         - name: javaDeveloper
+           valueFrom:
+               configMapKeyRef:
+                     name: example-configmap
+                     key: developer
+========================
+  kubectl create -f configpod1.yml 
+  664  kubectl get pod
+  665  kubectl exec -it pod-env2 bash
+               env
+               exit
+====================================
+## Configmap as Volume mount
+$ cat configpod2.yml 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testconfig
+spec:
+  containers:
+    - name: test
+      image: docker.io/httpd
+      volumeMounts:
+      - name: config-volume
+        mountPath: /tmp/myenvs/
+  volumes:
+    - name: config-volume
+      configMap:
+        name: example-configmap 
+  restartPolicy: Never
+================================
+  678  kubectl exec -it testconfig bash
+              ls /tmp/myenvs
+              cat /tmp/myenvs/developer
+              cat /tmp/myenvs/course
+             exit
+=====================================
+##### Secret 
+## From literals
+
+
+## Example Database pod
+
+
+683  kubectl get secret
+  684  kubectl create secret generic mysecret --from-literal=mypass=centos
+  685  kubectl get secret
+  686  kubectl describe secret mysecret
+  687  vi database1.yml 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: mydep1
+  name: mydep1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mydep1
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: mydep1
+    spec:
+      containers:
+      - image: docker.io/mysql:5.6
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+               secretKeyRef:
+                       key: mypass
+                       name: mysecret
+        - name: MYSQL_DATABASE
+          value: simplilearn
+        resources: {}
+status: {}
+
+
+
+
+  688  kubectl create -f database1.yml 
+  689  kubectl get pods
+  690  kubectl exec -it mydep1-76c47d9d7b-vfzjs bash
+                  Mysql -uroot -p
+                  ## try password centos
+===================================================
+
+
+### Cluster Maintenance
+
+
+700  kubectl create deployment mydep1 --image=docker.io/httpd --replicas=4
+  701  kubectl get deployment
+  702  kubectl get pods -o wide
+  703  kubectl scale deployment mydep1 --replicas=6
+
+
+  704  kubectl get pods -o wide
+  705  ls
+  706  kubectl get pods -o wide
+
+
+  708  kubectl drain --ignore-daemonsets workstation  ##(if needed use --force too)
+
+
+  709  kubectl get pods -o wide
+  710  kubectl uncordon workstation
+  711  kubectl get pods -o wide
+
+
+  713  kubectl delete pod mydep1-6b7cfdd955-xwpnk
+  714  kubectl get pods -o wide
+  715  kubectl cordon workstation
+
+
+
+
+  716  kubectl get nodes -o wide
+  719  kubectl get pods -o wide
+  720  kubectl uncordon workstation
+  721  kubectl get nodes -o wide
+===================================================
+===========================
+
+
+## Cluster Upgrade
+
+
+##Upgrade master
+
+
+ 726  sudo apt update
+  727  sudo apt-cache madison kubeadm
+  730  kubectl get nodes -o wide
+  732  kubeadm version
+  737  sudo apt-mark unhold kubeadm  && sudo  apt-get update && sudo apt-get install -y kubeadm=1.20.13-00 && sudo apt-mark hold kubeadm
+ 
+###############
+ 738  sudo kubeadm upgrade plan
+  739  sudo kubeadm upgrade apply v1.20.13
+#######
+  740  kubectl version
+  741  sudo apt-get update && sudo apt-get install -y kubelet=1.20.13-00 kubectl=1.20.13-00
+  742  sudo apt-mark hold kubelet kubectl
+  743  sudo systemctl daemon-reload 
+  744  sudo systemctl restart kubelet
+  745  kubectl get nodes
+==============================================
+## Upgrade Node1 
+### On Master
+ 748  kubectl drain workstation --ignore-daemonsets --delete-local-data --force
+  749  kubectl get pods -o wide
+-------------------
+###On Node1
+sudo apt update
+   44  sudo apt-mark unhold kubeadm && sudo apt-get update && sudo apt-get install -y kubeadm=1.20.13-00 && sudo apt-mark hold kubeadm
+   45  sudo kubeadm upgrade node
+   46  sudo  apt-get update && sudo apt-get install -y kubelet=1.20.13-00 kubectl=1.20.13-00
+   47  sudo systemctl daemon-reload 
+   48  sudo systemctl restart kubelet
+
+
+### On Master
+
+
+  750  kubectl uncordon workstation
+  751  kubectl get nodes
+
+
+=============================================================
+######## Repeat same steps with Node 2
+### On Master
+ 748  kubectl drain client1 --ignore-daemonsets --delete-local-data --force
+  749  kubectl get pods -o wide
+-------------------
+###On Node2
+sudo apt update
+   44  sudo apt-mark unhold kubeadm && sudo apt-get update && sudo apt-get install -y kubeadm=1.20.13-00 && sudo apt-mark hold kubeadm
+   45  sudo kubeadm upgrade node
+   46  sudo  apt-get update && sudo apt-get install -y kubelet=1.20.13-00 kubectl=1.20.13-00
+   47  sudo systemctl daemon-reload 
+   48  sudo systemctl restart kubelet
+
+
+### On Master
+
+
+  750  kubectl uncordon client1
+  751  kubectl get nodes
+
+
+================================
+### Taking Backups
+
+
+ 762  kubectl get deployments
+  763  kubectl get deployments mydep1
+  764  kubectl get deployments mydep1 -o yaml > mydep1.yml
+  765  cat mydep1.yml 
+  766  kubectl get svc
+  767  kubectl expose deployment mydep1 --port=80
+  768  kubectl get svc
+  769  kubectl edit svc mydep1
+  770  kubectl get svc
+  771  kubectl get svc mydep1 -o yaml > mydep1svc.yaml
+  772  cat mydep1svc.yaml
+========================================================
+### Dashboard
+
+
+774  kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0/aio/deploy/recommended.yaml
+
+
+  775  kubectl edit svc kubernetes-dashboard -n kubernetes-dashboard   ### Change type to Nodeport
+
+
+  776  kubectl get svc -n kubernetes-dashboard
+
+
+  777  kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep kubernetes-dashboard | awk '{print $1}')
+
+
+
+
+### Copy the token and login to the dashboard
+
+
+================================================================
+### Lets try with Cluster admin role
+
+
+kubectl get clusterrolebinding kubernetes-dashboard -n kubernetes-dashboard -o yaml
+
+
+  231  kubectl delete clusterrolebinding kubernetes-dashboard -n kubernetes-dashboard
+
+
+  232  kubectl create clusterrolebinding mybinding --clusterrole=cluster-admin --serviceaccount=kubernetes-dashboard:kubernetes-dashboard
+
+
+  233  kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep kubernetes-dashboard | awk '{print $1}')
+
+
+  234  kubectl get clusterrolebinding mybinding -n kubernetes-dashboard -o yaml
+
+
+  235  kubectl get clusterrole view -o yaml
+=============================================
+## Lets try new login
+For User: myuser1  
+236  kubectl create serviceaccount myuser1 -n kubernetes-dashboard
+
+
+  237  kubectl create clusterrolebinding myuser1binding --clusterrole=view --serviceaccount=kubernetes-dashboard:myuser1
+
+
+  238  kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep myuser1 | awk '{print $1}')
+
+
+==================================
+Task To TRY with Admin
+========================
+
+
+For User: myuser2
+  240  kubectl create serviceaccount myuser2 -n kubernetes-dashboard
+
+
+  241  kubectl create clusterrolebinding myuser2binding --clusterrole=admin --serviceaccount=kubernetes-dashboard:myuser2
+
+
+  242  kubectl -n kubernetes-dashboard describe secret $(kubectl -n kubernetes-dashboard get secret | grep myuser2| awk '{print $1}')
+
+
+==========================================================================================================================================================
+Date: 27th Nov 2021
+--------------------------
+### INIT Containers
+## Example1
+
+
+794  vi init.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app: myapp
+spec:
+  containers:
+  - name: myapp-container
+    image: httpd
+  initContainers:
+  - name: init-myservice
+    image: busybox
+    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for  myservice; sleep 2; done;']
+
+
+--------------------------
+  795  kubectl create -f init.yml 
+  796  kubectl get pods
+  797  kubectl describe pod myapp-pod
+  798  kubectl logs -c init-myservice myapp-pod -f
+  799  kubectl get pods
+### Lets create svc by name myservice
+
+
+  800  vi svc.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myservice
+spec:
+  selector:
+    app: wordpress
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 80
+------------------------------
+
+
+  801  kubectl get pods
+  802  kubectl logs -c init-myservice myapp-pod -f
+  803  kubectl create -f svc.yml 
+  804  kubectl logs -c init-myservice myapp-pod -f
+  805  kubectl get pods
+  806  kubectl describe pod myapp-pod
+
+
+================================================================
+### Example2 : INIT Container : DB Dump download then start mysql db
+##
+  807  vi init2.yml
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mydb
+  labels:
+    app: db
+spec:
+  initContainers:
+    - name: fetch
+      image: mwendler/wget
+      command: ["wget","--no-check-certificate","https://sample-videos.com/sql/Sample-SQL-File-1000rows.sql","-O","/docker-entrypoint-initdb.d/dump.sql"]
+      volumeMounts:
+        - mountPath: /docker-entrypoint-initdb.d
+          name: dump
+  containers:
+    - name: mysql
+      image: mysql
+      env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "example"
+        - name: MYSQL_DATABASE
+          value: simplilearn
+
+
+      volumeMounts:
+        - mountPath: /docker-entrypoint-initdb.d
+          name: dump
+  volumes:
+    - emptyDir: {}
+      name: dump
+
+
+
+
+------------------------------------------
+  808  kubectl create -f init2.yml 
+  809  kubectl get pods -w
+  810  kubectl logs -c fetch mydb -f
+
+
+#######################################################################
+## Probes
+## Ex. Liveness Probe
+
+
+  815  vi probes.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: liveness-exec
+spec:
+  containers:
+  - name: liveness
+    image: k8s.gcr.io/busybox
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600
+    livenessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5
+      periodSeconds: 5
+
+
+-------------------------------------
+  816  kubectl create -f probes.yml 
+  817  kubectl get pod
+  818  kubectl describe pod liveness-exec
+  819  kubectl get pod
+  820  kubectl describe pod liveness-exec
+============================================================================================================================================================
+### RBAC - 
+
+
+
+
+
+
+825  kubectl create namespace simplilearn
+  826  mkdir simplilearn
+  827  cd simplilearn/
+
+
+### Lets create Certificates for authentication and user name user1 for simplilearn namespace
+
+
+  828  sudo openssl genrsa -out user1.key 2048
+  829  ls
+  830  sudo openssl req -new -key user1.key -out user1.csr
+  831  ls
+  832  sudo openssl x509 -req -in user1.csr -CA /etc/kubernetes/pki/ca.crt -CAkey /etc//kubernetes/pki/ca.key -CAcreateserial -out user1.crt -days 500
+Organisation name → namespace ## simplilearn in my case 
+and common name  → user1
+
+
+
+
+  833  ls
+
+
+#### For Authorization lets create role and role binding
+  834  vi role.yml
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+        namespace: simplilearn
+        name: user1-role            
+rules:
+     - apiGroups: ["", "extensions", "apps"]
+       resources: ["deployments", "pods", "services"]
+       verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+
+------------------------
+
+
+  835  vi rolebinding.yml
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+          name: role-test
+          namespace: simplilearn
+subjects:
+       - kind: User
+         name: user1
+         apiGroup: ""
+roleRef:
+         kind: Role
+         name: user1-role
+         apiGroup: ""
+-------------------------------------------
+
+
+  836  kubectl create -f role.yml 
+  837  kubectl create -f rolebinding.yml 
+
+
+##Next steps    
+         Step 1: Set credentials :
+         Step 2: Set context to simplilearn Namespace:
+  
+
+
+  838  kubectl config set-context user1-context --cluster=kubernetes --namespace=simplilearn --user=user1
+
+
+  839  kubectl config get-contexts
+
+
+=================================================
+### Lets set user account and work directory
+
+
+843  sudo adduser pavan
+  844  sudo cp user1.* /home/pavan/
+  845  sudo chown pavan:pavan /home/pavan/user1.*
+  846  sudo mkdir /home/pavan/.kube
+  847  sudo chown pavan:pavan /home/pavan/.kube
+  848  ls ~/.kube
+  849  sudo cp /home/labsuser/.kube/config /home/pavan/.kube/
+  850  sudo chown pavan:pavan /home/pavan/.kube/config 
+============
+ 
+ $ su - pavan
+
+
+(In config file need to delete last 2 lines Key data and mention path of created keys  and change the line “current-context”)
+
+
+ 1  whoami
+    2  pwd
+    3  ls -la
+    4  ls -la .kube/
+
+
+
+
+    5  vi .kube/config 
+
+
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM1ekNDQWMrZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJeE1UQXlNekUyTXpJeU0xb1hEVE14TVRBeU1URTJNekl5TTFvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTDhPClBMb3dkUDFNMVlHQzNNMEdlSXczTTNuTElUa2YyOEtsc1JpdzFSUGxCWG5HK1ZqRDRHZzFCMXVxVGxpa0xtL1gKZ1NCeDRLQzMzbUM0UG1kWENsY20vS3pVbmx3V01uVE1zNll3blNsUGFhLzVKMkdvNHpMZTgvRnlocVBWb0FpSgpEUHFnNHE1RFZQbHZpY2NQb3JVNW9rYXl6b0VldVNmNUJTMEttZlJJVndvalNNMXp5b0hEczNxcWNGUVRCMjhiCjdYNm9NSWZFT2c3NmJDeFRSM3BGK3g2eCtjZjNCWWl5SXFmbzRHWUhHb29oMnFQVHpSbEV3cmgyVnoxK2VvK2UKTXo1akpBaG11aWhhdjY5WkpQOXBaZFlEY3EzdWdpNUliZDR4QUt5eXhaR05oWFdRWFBSS2FWa2lNMjZaNDhRcQpZT1hMTlBkYlEwdGNQdVZhdW1FQ0F3RUFBYU5DTUVBd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZOaDJMSE53UC9YNDJ3RVFhRFBLVkp0cTJVd2xNQTBHQ1NxR1NJYjMKRFFFQkN3VUFBNElCQVFDcHIzRnlxU0QyNG1XTUNya2tPQzA0N0YxTmR4YnlTOVRzaGg2Q2swS2pMbWF2OE9MMwppSE56eWdYQVJyRUxkNTNEVnBkamFMc2dmZGkyWUQvcEdWeXZHK2xwK1RNTFVxMGdNNkdjcXRHOFVHN2prNVJoCkZxSVFiOUFmY0tMN1B4T1NacWlvbzFJeTFDWXVnNVBnMlBUc01DV00rV01zTkl2UzlGbmNhOGpRTTBzeWg0d1EKWWF3Y1BqdjNoaVVsNnBEc1puUDE4M0dXVnpKazZrUkxYVXc5cm82aEJCOVJLdGNhcmZLZ3RyOE9DeHU1WGRaRgowZTlZRFVvcFJ4ZDlkMEhkR016bVl6UjZsWTc3dHFKeXVzV2ExUEorVnJhRFR6Wk81SURGdlNKNGkyRWlCWFM2CnpOUkNyUDJ6UWdJU0ZNQ0Z0QVRpM3dkTzZxa1A2dWNBOEtKNAotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    server: https://172.31.30.24:6443
+  name: kubernetes
+contexts:
+- context:
+    cluster: kubernetes
+    user: kubernetes-admin
+  name: kubernetes-admin@kubernetes
+- context:
+    cluster: kubernetes
+    namespace: simplilearn
+    user: user1
+  name: user1-context
+current-context: user1-context
+kind: Config
+preferences: {}
+users:
+- name: user1
+  user:
+    client-certificate: /home/pavan/user1.crt
+    client-key: /home/pavan/user1.key
+
+
+
+
+===========================
+    6  kubectl get pods      ### should give no error  ## No pods may be the output
+    7  kubectl get nodes    ### should give error as no access to user1
+
+
+
+
+
+
+
+
+========================================================
+Date: 28-Nov-2021
+#### Storage on K8S 
+### PV - PVC using NFS as backend Storage
+
+
+  
+
+## First Drain the Node 2 and release it from K8S cluster
+
+
+Release node 2 from K8S
+## From Master
+860  kubectl get nodes
+  861  kubectl drain client1 --ignore-daemonsets --delete-emptydir-data --force
+  862  kubectl delete node client1
+  863  kubectl get nodes
+
+
+
+
+Nfs server (in this case node2) 
+
+
+cat nfs.sh
+
+
+sudo mkdir /mydbdata
+sudo apt-get update
+sudo apt install nfs-kernel-server
+sudo echo "/mydbdata *(rw,sync,no_root_squash)" >> /etc/exports
+sudo exportfs -r
+sudo chown nobody:nogroup /mydbdata/
+sudo chmod 777 /mydbdata/
+
+
+
+
+--
+sudo sh nfs.sh
+
+
+--
+
+
+On worker and master
+
+
+sudo apt install nfs-kernel-server
+------------------
+On any one of master or node1
+
+
+sudo mount 172.31.20.254:/mydbdata /mnt
+df -h
+sudo umount /mnt
+--
+Note : 172.31.20.254 is NFS server IP in your case it will be different 
+#### Now create PV and PVC 
+ 870  vi pv.yml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: test
+  labels:
+    app: mysql
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 172.31.18.23
+    path: /mydbdata
+
+
+--------------
+  871  kubectl get pv
+  872  kubectl create -f pv.yml 
+  873  kubectl get pv
+  874  kubectl get pv -o wide
+  875  kubectl get pvc
+  876  vi pvc.yml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mypvc1
+  labels:
+    app: wordpress
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+----------------------------------
+
+
+  877  kubectl create -f pvc.yml 
+  878  kubectl get pvc
+  879  kubectl get pvc -o wide
+  880  kubectl get pv
+===============================
+### Lets create Deployment with Mysql and use the PVC
+
+
+  884  vi mymysql.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-mysql
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: password 
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: myvol1 
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: myvol1
+        persistentVolumeClaim:
+          claimName: mypvc1
+--------------------------------------------------------
+  885  kubectl create -f mymysql.yml 
+  886  kubectl get pods
+  887  kubectl exec -it test-mysql-7cb66bb45c-zbpnz bash
+                   df -hT
+                   exit
+  888  history 
+
+
+==============================================
+### Empty Volume
+ 890  vi empty.yml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pd
+spec:
+  containers:
+  - image: docker.io/httpd
+    name: test-container
+    volumeMounts:
+    - mountPath: /cache
+      name: cache-volume
+  volumes:
+  - name: cache-volume
+    emptyDir: {}
+----------------------------------------
+  891  kubectl create -f empty.yml 
+  892  kubectl get pod
+  893  kubectl exec -it test-pd bash
+======================================================================================================================================================
+
+
+### Ingress 
+
+
+  
+
+ 896  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-0.31.1/deploy/static/provider/baremetal/deploy.yaml
+  897  kubectl get pods -n ingress-nginx
+  898  kubectl get pods -n ingress-nginx -w
+  899  kubectl get svc -n ingress-nginx 
+
+
+=====================
+### Lets create 2 Deployments and apply ingress to it
+
+
+  900  kubectl create deployment myapp1 --image=docker.io/httpd
+  901  kubectl create deployment myapp2 --image=docker.io/openshift/hello-openshift
+  902  kubectl expose deployment myapp1 --port=80
+  903  kubectl expose deployment myapp2 --port=8080
+  904  kubectl get svc
+
+
+-----
+  905  vi ingress.yml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minimal-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /simplilearn1
+        pathType: Prefix
+        backend:
+          service:
+            name: myapp1
+            port:
+              number: 80
+      - path: /simplilearn2
+        pathType: Prefix
+        backend:
+          service:
+            name: myapp2
+            port:
+              number: 8080
+
+
+-------------  
+906  kubectl create -f ingress.yml 
+  907  kubectl get svc -n ingress-nginx 
+  908  kubectl get nodes -o wide
+
+
+---
+To Access use port no given by ingress-nginx 
+https://NodePORT:HTTPSPORT/simplilearn1
+https://NodePORT:HTTPSPORT/simplilearn2
+
+
+E.g  https://172.31.32.85:31444
+ https://172.31.32.85:31444/simplilearn1
+===========================================
+### Extra
+https://kubernetes.io/docs/concepts/services-networking/ingress/
+
+
+
+
+############################
+###Troubleshooting k8s
+
+
+========================================
+
+
+Logs
+ kubectl get pods --show-labels
+ 1218  kubectl logs -l app=myapp1
+ 1219  kubectl get pods -n kube-system
+ 1220  kubectl describe pod weave-net-47pjz
+ 1221  kubectl describe pod weave-net-47pjz -n kube-system
+ 1222  kubectl logs -c weave-npc weave-net-47pjz -n kube-system
+ 1223  kubectl logs -c weave-npc weave-net-47pjz -n kube-system --since=1h
+ 1224  kubectl logs -c weave-npc weave-net-47pjz -n kube-system --tail=10
+ 1225  kubectl logs -c weave-npc weave-net-47pjz -n kube-system --tail=4
+ 1226  kubectl logs -c weave-npc weave-net-47pjz -n kube-system --tail=1
+ 1227  kubectl logs --help
+ 1228  kubectl logs -c weave-npc weave-net-47pjz -n kube-system --since=10m
+---
+Control Plane failure
+
+
+ kubectl get nodes 
+  235  sudo docker ps | grep apiserver
+  236  sudo systemctl status kubelet
+  237  sudo systemctl status docker
+  238  hostname -i
+  239  vi .kube/config 
+  240  kubectl get nodes 
+--
+Node Failure 
+All command on nodes 
+sudo docker ps | grep kube
+  176  sudo docker ps | grep proxy
+  177  sudo docker ps | grep weave
+  178  sudo systemctl restart docker
+  179  sudo systemctl restart kubelet
+
+
+### Cluster Nodes Drain , Cordon, uncordon command also help in solving specific problems
+===================================================================================

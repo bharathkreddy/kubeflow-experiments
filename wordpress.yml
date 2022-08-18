@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: wp
+  name: brk-wp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wp
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: wp
+    spec:
+      containers:
+        - 
+          image: docker.io/wordpress:php8.1-fpm-alpine
+          name: wordpress
+          env:
+            -
+              name: WORDPRESS_DB_HOST
+              value: brk-sql  #name of service which exposes the db
+            -
+              name: WORDPRESS_DB_PASSWORD
+              value: root
+            -
+              name: WORDPRESS_DB_USER
+              value: root
+            -
+              name: WORDPRESS_DB_NAME
+              value: brk_db
+          resources: {}
+status: {}

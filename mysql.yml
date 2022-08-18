@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: sql
+  name: brk-sql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sql
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: sql
+    spec:
+      containers:
+        - 
+          image: docker.io/mysql:latest
+          name: mysql
+          env:
+            -
+              name: MYSQL_ROOT_PASSWORD
+              value: root
+            -
+              name: MYSQL_DATABASE
+              value: brk_db
+          resources: {}
+status: {}
