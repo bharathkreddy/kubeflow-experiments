@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: po1
+  labels:
+    color: blue
+  namespace: brk
+spec:
+  containers:
+    - 
+      name: webserver1
+      image: httpd:alpine
+      ports: 
+        -
+          containerPort: 80
+      volumeMounts:
+        -
+          mountPath: /tmp/myenvs/
+          name: config-vol
+  volumes:
+    -
+      configMap: 
+        name: example-config
+      name: config-vol
+  restartPolicy: Never
+
+
