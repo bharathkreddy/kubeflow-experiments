@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: livenessprobe
+  name: livenessprobe
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: livenessprobe
+  template:
+    metadata:
+      labels:
+        app: livenessprobe
+    spec:
+      containers:
+      - image: busybox
+        name: busybox
+        args: ["/bin/sh","-c","touch brk.txt;sleep 20; rm -f brk.txt;sleep 600"]
+        livenessProbe: 
+          exec:
+            command: ["cat","brk.txt"]
+          initialDelaySeconds: 5
+          periodSeconds: 3
+          

@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: po1
+  labels:
+    purpose: init-example
+  namespace: brk
+spec:
+  containers:
+    - 
+      name: init-nginx
+      image: nginx
+      ports: 
+        -
+          containerPort: 8080
+      volumeMounts:
+        -
+          mountPath: /usr/share/nginx/html
+          name: webpage
+  initContainers:
+        -
+          name: init-for-nginx
+          image: busybox
+          command: ["wget"]
+          args: ["-O","./initial/index.html","http://help.websiteos.com/websiteos/example_of_a_simple_html_page.htm"]
+          volumeMounts:
+            -
+              mountPath: ./initial
+              name: webpage
+  volumes:
+    -
+      name: webpage
+      emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: init-apache-svc
+  labels:
+    color: red
+  namespace: brk
+spec:
+  ports: 
+    -
+      port: 5000 #port of the service
+      targetPort: 8080 # port of the containers it selects from
+  selector:
+    purpose: init-example
+  type: NodePort
