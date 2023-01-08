@@ -22,15 +22,22 @@
         We can create multiport services i.e. service which exposes multiple ports 
 ![multipport](./Images/multiport_service.jpeg)
 ![multimanifest](./Images/Multiport%20service%20manifest.jpeg)
+
     - NodePort : 
+    
         1. Creates a service with IP and port which can be reached via any of the nodes from outside cluster by using *node's IP address and port of the service.* The etcd server knows how to redirect the traffic from node to service and from service to hit the pod. 
+        
         2. Creating a nodeport creates a clusterIP automatically, the port mentioned on maifest is the port of IPcluster created and target pod mentioned is the port of the pod. 
+        
         3. This is not very secure as we are exposing each node directly to clients outside the cluster.
 ![nodeport](./Images/nodeport.jpeg)
 ![nodeport2](./Images/nodeport2.jpeg)
 ![nodeportip](./Images/nodeportip.jpeg)
+
         4. Once a svc is created as Cluster IP we can do `kubectl edit scv svc-name` and edit the type to NodePort (cap N and P) to change the service from Cluster IP to NodePort.
+        
     - LoadBalancer : uses external load balancer 
+    
         1. external load balancer deploys NodePort and ClusterIP automatically.
         2. Can be corp loadbalancer or by a cloud provider.
         3. Entry point becomes the loadbalancer. Node port created is only accessible by the loadbalancer.
